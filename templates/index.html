@@ -48,12 +48,31 @@
                     <input type="text" id="promptIn" value="Cyberpunk cyborg, neon circuitry, ultra-realistic">
                 </div>
                 <div class="input-group">
-                    <label>Style Preset</label>
+                    <label>Style Preset (Edit Models)</label>
                     <select id="modelIn">
-                        <option value="epic-manga">Epic Manga</option>
-                        <option value="3d-cartoon-1">3D Pixar Style</option>
-                        <option value="pixel-art">Retro Pixel Art</option>
-                        <option value="oil-painting">Classical Oil</option>
+                        <optgroup label="Anime & Manga">
+                            <option value="epic-manga" selected>Epic Manga</option>
+                            <option value="janpan-anime">Japan Anime</option>
+                            <option value="ghibli-spirited-away-anime">Studio Ghibli: Spirited Away</option>
+                            <option value="ghibli-princess-mononoke-anime">Studio Ghibli: Princess Mononoke</option>
+                            <option value="ghibli-my-neighbor-totoro-anime">Studio Ghibli: My Neighbor Totoro</option>
+                        </optgroup>
+                        <optgroup label="Stylized & 3D">
+                            <option value="3d-cartoon-1">3D Pixar Style</option>
+                            <option value="cartoon-1">Classic Cartoon</option>
+                            <option value="pixel-art">Retro Pixel Art</option>
+                            <option value="nano-banana-pro">Nano Banana Pro</option>
+                        </optgroup>
+                        <optgroup label="Fine Art">
+                            <option value="oil-painting">Classical Oil Painting</option>
+                            <option value="monet">Claude Monet Style</option>
+                            <option value="parchment">Old Parchment</option>
+                        </optgroup>
+                        <optgroup label="Advanced">
+                            <option value="gpt-image">GPT Image Morph</option>
+                            <option value="grok-imagine">Grok Imagine Morph</option>
+                            <option value="seedream-4.5">SeeDream 4.5</option>
+                        </optgroup>
                     </select>
                 </div>
                 <button type="submit" class="gen-btn" id="genBtn">Morph Identity</button>
