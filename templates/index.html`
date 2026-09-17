@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pollinations Image-to-Image</title>
+    <style>
+        body {
+            background: #0f0f12;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #1a1a20;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border: 1px solid #333;
+            width: 450px;
+            text-align: center;
+        }
+        h2 { color: #00ffcc; margin-bottom: 1.5rem; }
+        .input-group { margin-bottom: 1.2rem; text-align: left; }
+        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #aaa; }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            background: #252530;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #00ffcc, #0066ff);
+            border: none;
+            color: #000;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-size: 1rem;
+        }
+        button:hover { opacity: 0.8; transform: scale(1.02); }
+        #result-container { margin-top: 2rem; display: none; }
+        #result-image { width: 100%; border-radius: 12px; border: 2px solid #00ffcc; }
+        .loader { display: none; margin: 1rem auto; border: 4px solid #333; border-top: 4px solid #00ffcc; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>AI Image Transformer</h2>
+        <form id="uploadForm">
+            <div class="input-group">
+                <label>Source Image</label>
+                <input type="file" id="imageInput" accept="image/*" required>
+            </div>
+            <div class="input-group">
+                <label>Prompt</label>
+                <input type="text" id="promptInput" value="Transform this person into a cyberpunk cyborg, neon lights, high detail">
+            </div>
+            <div class="input-group">
+                <label>Model</label>
+                <select id="modelInput">
+                    <option value="community/vendouple/uncensored-image-v2">Uncensored v2</option>
+                    <option value="community/CloudCompile/agnes-image-2.0-flash">Agnes Flash (Cheap)</option>
+                    <option value="community/sharktide/inferenceport-ai-lightning-image-turbo">Lightning Turbo</option>
+                </select>
+            </div>
+            <button type="submit" id="submitBtn">Generate Magic</button>
+        </form>
+
+        <div class="loader" id="loader"></div>
+        <div id="result-container">
+            <p style="font-size: 0.8rem; color: #aaa;">Generated Result:</p>
+            <img id="result-image" src="" alt="Result">
+            <br><br>
+            <a id="downloadLink" href="#" download="result.jpg" style="color: #00ffcc; text-decoration: none; font-size: 0.9rem;">Download Image</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const btn = document.getElementById('submitBtn');
+        const loader = document.getElementById('loader');
+        const resContainer = document.getElementById('result-container');
+        const resImg = document.getElementById('result-image');
+        const dlLink = document.getElementById('downloadLink');
+
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('image', document.getElementById('imageInput').files[0]);
+            formData.append('prompt', document.getElementById('promptInput').value);
+            formData.append('model', document.getElementById('modelInput').value);
+
+            btn.disabled = true;
+            btn.innerText = "Processing...";
+            loader.style.display = "block";
+            resContainer.style.display = "none";
+
+            try {
+                const response = await fetch('/generate', { method: 'POST', body: formData });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    resImg.src = url;
+                    dlLink.href = url;
+                    resContainer.style.display = "block";
+                } else {
+                    const err = await response.json();
+                    alert("Error: " + (err.error || "Something went wrong"));
+                }
+            } catch (e) {
+                alert("Connection error: " + e);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Generate Magic";
+                loader.style.display = "none";
+            }
+        };
+    </script>
+</body>
+</html>
