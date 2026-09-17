@@ -33,11 +33,7 @@
 
         {% if not logged_in %}
         <div id="login-section">
-            <p style="margin-bottom: 1.5rem;">Enter your Pollinations API key to start morphing.</p>
-            <div class="input-group">
-                <label>API Key (sk_...)</label>
-                <input type="password" id="apiKeyInput" placeholder="sk_...">
-            </div>
+            <p style="margin-bottom: 1.5rem;">Connect your Pollinations wallet to start morphing.</p>
             <button id="loginBtn" class="auth-btn">Connect Wallet</button>
         </div>
         {% else %}
@@ -52,7 +48,7 @@
                     <input type="text" id="promptIn" value="Cyberpunk cyborg, neon circuitry, ultra-realistic">
                 </div>
                 <div class="input-group">
-                    <label>Style Preset (Edit Models)</label>
+                    <label>Style Preset</label>
                     <select id="modelIn">
                         <option value="community/sharktide/inferenceport-ai-lightning-image-turbo">High Quality Turbo</option>
                     </select>
@@ -62,7 +58,7 @@
             <div class="loader" id="loader"></div>
             <div id="result-area">
                 <img id="res-img" src="">
-                <p style="font-size: 0.8rem; margin-top: 10px;"><a href="/logout" style="color: #ff4d4d; text-decoration: none;">Disconnect Wallet</a></p>
+                <p style="font-size: 0.8rem; margin-top: 10px;"><a href="/disconnect" style="color: #ff4d4d; text-decoration: none;">Disconnect Wallet</a></p>
             </div>
         </div>
         {% endif %}
@@ -75,41 +71,9 @@
     <script>
         const loginBtn = document.getElementById('loginBtn');
         if(loginBtn) {
-            loginBtn.onsubmit = async (e) => {
-                e.preventDefault();
-                const key = document.getElementById('apiKeyInput').value;
-                
-                const formData = new FormData();
-                formData.append('api_key', key);
-
-                try {
-                    const res = await fetch('/set_key', { 
-                        method: 'POST', 
-                        body: formData 
-                    });
-                    if (res.ok) {
-                        window.location.reload();
-                    } else {
-                        const err = await res.json();
-                        alert("Error: " + (err.error || "Invalid API Key"));
-                    }
-                } catch (e) { alert("Connection error: " + e); }
+            loginBtn.onclick = () => {
+                window.location.href = '/connect';
             };
-        }
-        // Redefining the logic slightly for the login button because it's not in a form
-        if(loginBtn) {
-            loginBtn.onclick = async () => {
-                const key = document.getElementById('apiKeyInput').value;
-                const formData = new FormData();
-                formData.append('api_key', key);
-                try {
-                    const res = await fetch('/set_key', { method: 'POST', body: formData });
-                    if (res.ok) { window.location.reload(); } else {
-                        const err = await res.json();
-                        alert("Error: " + (err.error || "Invalid API Key"));
-                    }
-                } catch (e) { alert("Connection error: " + e); }
-            }
         }
 
         const form = document.getElementById('morphForm');
