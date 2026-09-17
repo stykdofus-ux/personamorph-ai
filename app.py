@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file, jsonify, url_for
+from flask import Flask, render_template, request, send_file, jsonify, url_for, session, redirect
 import requests
 import io
 import os
@@ -9,18 +9,19 @@ app.secret_key = "super-secret-key-for-session"
 
 # --- CONFIGURATION ---
 API_KEY="sk_oYoViUkYpfpeZ7hGiFzHCbblyqC7RYT1" 
-DEFAULT_MODEL = "epic-manga" # FIXED: Now using a valid edit model
+DEFAULT_MODEL = "epic-manga" 
 API_URL = "https://gen.pollinations.ai/v1/images/edits"
 
 @app.route('/')
 def index():
+    # Fixed: session is now imported
     return render_template('index.html', logged_in= 'user_key' in session)
 
 @app.route('/login')
 def login():
     # Step 1: Redirect user to Pollinations OAuth page
-    # Note: Redirect URI must match exactly what is in the Pollinations Dashboard
-    redirect_uri = request.url_root + "callback"
+    # Use request.host_url to dynamically get the Railway domain
+    redirect_uri = request.host_url + "callback"
     auth_url = f"https://gen.pollinations.ai/oauth/authorize?client_id=pk_I7Juq9TCkV9jG1wL&redirect_uri={redirect_uri}&response_type=code&scope=usage"
     return redirect(auth_url)
 
@@ -34,7 +35,7 @@ def callback():
         "client_id": "pk_I7Juq9TCkV9jG1wL",
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": request.url_root + "callback"
+        "redirect_uri": request.host_url + "callback"
     })
 
     if token_res.status_code == 200:
@@ -69,7 +70,6 @@ def generate():
         response = requests.post(API_URL, headers=headers, data=data, files=files, timeout=120)
 
         if response.status_code == 200:
-            # The API might return b64_json or raw binary depending on the model
             if response.headers.get('Content-Type') == 'application/json':
                 import base64
                 res_json = response.json()
