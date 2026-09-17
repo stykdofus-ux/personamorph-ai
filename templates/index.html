@@ -3,132 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pollinations Image-to-Image</title>
+    <title>PersonaMorph | AI Identity Studio</title>
     <style>
-        body {
-            background: #0f0f12;
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-        }
-        .container {
-            background: #1a1a20;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            border: 1px solid #333;
-            width: 450px;
-            text-align: center;
-        }
-        h2 { color: #00ffcc; margin-bottom: 1.5rem; }
-        .input-group { margin-bottom: 1.2rem; text-align: left; }
-        label { display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #aaa; }
-        input, select {
-            width: 100%;
-            padding: 10px;
-            background: #252530;
-            border: 1px solid #444;
-            color: white;
-            border-radius: 8px;
-            box-sizing: border-box;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(45deg, #00ffcc, #0066ff);
-            border: none;
-            color: #000;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-            font-size: 1rem;
-        }
-        button:hover { opacity: 0.8; transform: scale(1.02); }
-        #result-container { margin-top: 2rem; display: none; }
-        #result-image { width: 100%; border-radius: 12px; border: 2px solid #00ffcc; }
-        .loader { display: none; margin: 1rem auto; border: 4px solid #333; border-top: 4px solid #00ffcc; border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
+        :root { --accent: #bc13fe; --bg: #0a0a0c; --card: #161a20; --text: #f0f0f0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .app-card { background: var(--card); padding: 2.5rem; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); border: 1px solid #2a2a35; width: 450px; text-align: center; }
+        .logo { font-size: 2rem; font-weight: 800; background: linear-gradient(to right, #bc13fe, #00d2ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
+        .tagline { color: #888; font-size: 0.9rem; margin-bottom: 2rem; }
+        .auth-btn { background: var(--accent); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block; transition: 0.3s; }
+        .auth-btn:hover { opacity: 0.8; transform: translateY(-2px); }
+        .hidden { display: none; }
+        .input-group { text-align: left; margin-bottom: 1.2rem; }
+        label { display: block; font-size: 0.8rem; color: #aaa; margin-bottom: 0.4rem; }
+        input, select { width: 100%; padding: 12px; background: #252530; border: 1px solid #333; color: white; border-radius: 10px; box-sizing: border-box; }
+        .gen-btn { width: 100%; padding: 14px; background: linear-gradient(45deg, #bc13fe, #00d2ff); border: none; color: white; font-weight: bold; border-radius: 12px; cursor: pointer; font-size: 1rem; transition: 0.3s; }
+        .gen-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #result-area { margin-top: 2rem; display: none; }
+        #res-img { width: 100%; border-radius: 15px; border: 3px solid var(--accent); }
+        .loader { display: none; margin: 1rem auto; border: 4px solid #333; border-top: 4px solid var(--accent); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .footer { margin-top: 2rem; font-size: 0.7rem; color: #555; }
+        .footer a { color: #888; text-decoration: none; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>AI Image Transformer</h2>
-        <form id="uploadForm">
-            <div class="input-group">
-                <label>Source Image</label>
-                <input type="file" id="imageInput" accept="image/*" required>
-            </div>
-            <div class="input-group">
-                <label>Prompt</label>
-                <input type="text" id="promptInput" value="Transform this person into a cyberpunk cyborg, neon lights, high detail">
-            </div>
-            <div class="input-group">
-                <label>Model</label>
-                <select id="modelInput">
-                    <option value="community/vendouple/uncensored-image-v2">Uncensored v2</option>
-                    <option value="community/CloudCompile/agnes-image-2.0-flash">Agnes Flash (Cheap)</option>
-                    <option value="community/sharktide/inferenceport-ai-lightning-image-turbo">Lightning Turbo</option>
-                </select>
-            </div>
-            <button type="submit" id="submitBtn">Generate Magic</button>
-        </form>
+    <div class="app-card">
+        <div class="logo">PersonaMorph</div>
+        <div class="tagline">Redefine your digital identity with Pollinations AI</div>
 
-        <div class="loader" id="loader"></div>
-        <div id="result-container">
-            <p style="font-size: 0.8rem; color: #aaa;">Generated Result:</p>
-            <img id="result-image" src="" alt="Result">
-            <br><br>
-            <a id="downloadLink" href="#" download="result.jpg" style="color: #00ffcc; text-decoration: none; font-size: 0.9rem;">Download Image</a>
+        {% if not logged_in %}
+        <div id="login-section">
+            <p style="margin-bottom: 1.5rem;">Connect your Pollinations account to start morphing.</p>
+            <a href="/login" class="auth-btn">Connect Wallet</a>
+        </div>
+        {% else %}
+        <div id="main-section">
+            <form id="morphForm">
+                <div class="input-group">
+                    <label>Upload Your Photo</label>
+                    <input type="file" id="imgIn" accept="image/*" required>
+                </div>
+                <div class="input-group">
+                    <label>Transformation Prompt</label>
+                    <input type="text" id="promptIn" value="Cyberpunk cyborg, neon circuitry, ultra-realistic">
+                </div>
+                <div class="input-group">
+                    <label>Style Preset</label>
+                    <select id="modelIn">
+                        <option value="epic-manga">Epic Manga</option>
+                        <option value="3d-cartoon-1">3D Pixar Style</option>
+                        <option value="pixel-art">Retro Pixel Art</option>
+                        <option value="oil-painting">Classical Oil</option>
+                    </select>
+                </div>
+                <button type="submit" class="gen-btn" id="genBtn">Morph Identity</button>
+            </form>
+            <div class="loader" id="loader"></div>
+            <div id="result-area">
+                <img id="res-img" src="">
+                <p style="font-size: 0.8rem; margin-top: 10px;"><a href="/logout" style="color: #ff4d4d; text-decoration: none;">Disconnect Wallet</a></p>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="footer">
+            Powered by <a href="https://pollinations.ai" target="_blank">Pollinations.ai</a>
         </div>
     </div>
 
     <script>
-        const form = document.getElementById('uploadForm');
-        const btn = document.getElementById('submitBtn');
-        const loader = document.getElementById('loader');
-        const resContainer = document.getElementById('result-container');
-        const resImg = document.getElementById('result-image');
-        const dlLink = document.getElementById('downloadLink');
+        const form = document.getElementById('morphForm');
+        if(form) {
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('genBtn');
+                const loader = document.getElementById('loader');
+                const resArea = document.getElementById('result-area');
+                const resImg = document.getElementById('res-img');
 
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData();
-            formData.append('image', document.getElementById('imageInput').files[0]);
-            formData.append('prompt', document.getElementById('promptInput').value);
-            formData.append('model', document.getElementById('modelInput').value);
+                const fd = new FormData();
+                fd.append('image', document.getElementById('imgIn').files[0]);
+                fd.append('prompt', document.getElementById('promptIn').value);
+                fd.append('model', document.getElementById('modelIn').value);
 
-            btn.disabled = true;
-            btn.innerText = "Processing...";
-            loader.style.display = "block";
-            resContainer.style.display = "none";
+                btn.disabled = true;
+                btn.innerText = "Morphing...";
+                loader.style.display = "block";
+                resArea.style.display = "none";
 
-            try {
-                const response = await fetch('/generate', { method: 'POST', body: formData });
-                
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    resImg.src = url;
-                    dlLink.href = url;
-                    resContainer.style.display = "block";
-                } else {
-                    const err = await response.json();
-                    alert("Error: " + (err.error || "Something went wrong"));
-                }
-            } catch (e) {
-                alert("Connection error: " + e);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "Generate Magic";
-                loader.style.display = "none";
-            }
-        };
+                try {
+                    const res = await fetch('/generate', { method: 'POST', body: fd });
+                    if (res.ok) {
+                        const blob = await res.blob();
+                        resImg.src = URL.createObjectURL(blob);
+                        resArea.style.display = "block";
+                    } else {
+                        const err = await res.json();
+                        alert("Error: " + (err.error || "Something went wrong"));
+                    }
+                } catch (e) { alert("Connection error: " + e); }
+                finally { btn.disabled = false; btn.innerText = "Morph Identity"; loader.style.display = "none"; }
+            };
+        }
     </script>
 </body>
 </html>
