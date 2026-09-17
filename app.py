@@ -9,7 +9,7 @@ app.secret_key = "super-secret-key-for-session"
 
 # --- CONFIGURATION ---
 # Default fallback model
-DEFAULT_MODEL = "epic-manga" 
+DEFAULT_MODEL = "community/sharktide/inferenceport-ai-lightning-image-turbo" 
 API_URL = "https://gen.pollinations.ai/v1/images/edits"
 
 @app.route('/')
