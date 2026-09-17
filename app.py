@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.secret_key = "super-secret-key-for-session"
 
 # --- CONFIGURATION ---
-API_KEY="sk_oYoViUkYpfpeZ7hGiFzHCbblyqC7RYT1" 
+# Default fallback model
 DEFAULT_MODEL = "epic-manga" 
 API_URL = "https://gen.pollinations.ai/v1/images/edits"
 
@@ -16,38 +16,22 @@ API_URL = "https://gen.pollinations.ai/v1/images/edits"
 def index():
     return render_template('index.html', logged_in= 'user_key' in session)
 
-@app.route('/login')
-def login():
-    # Ensure we use HTTPS for the redirect URI
-    host = request.host_url.replace("http://", "https://")
-    redirect_uri = host + "callback"
+@app.route('/set_key', methods=['POST'])
+def set_key():
+    key = request.form.get('api_key')
+    if not key or not key.startswith('sk_'):
+        return jsonify({"error": "Invalid API key. Must start with 'sk_'"}), 400
     
-    auth_url = f"https://gen.pollinations.ai/oauth/authorize?client_id=pk_I7Juq9TCkV9jG1wL&redirect_uri={redirect_uri}&response_type=code&scope=usage"
-    return redirect(auth_url)
+    # Simple validation check to see if the key works
+    try:
+        res = requests.get("https://gen.pollinations.ai/v1/models", headers={"Authorization": f"Bearer {key}"})
+        if res.status_code != 200:
+            return jsonify({"error": "API key is invalid or unauthorized"}), 401
+    except:
+        return jsonify({"error": "Connection to Pollinations failed"}), 500
 
-@app.route('/callback')
-def callback():
-    code = request.args.get('code')
-    if not code:
-        return "Authorization failed", 400
-
-    # Ensure we use HTTPS for the redirect URI here too
-    host = request.host_url.replace("http://", "https://")
-    redirect_uri = host + "callback"
-
-    token_res = requests.post("https://gen.pollinations.ai/oauth/token", data={
-        "client_id": "pk_I7Juq9TCkV9jG1wL",
-        "grant_type": "authorization_code",
-        "code": code,
-        "redirect_uri": redirect_uri
-    })
-
-    if token_res.status_code == 200:
-        token_data = token_res.json()
-        session['user_key'] = token_data.get('access_token')
-        return redirect(url_for('index'))
-    
-    return f"Token exchange failed: {token_res.text}", 400
+    session['user_key'] = key
+    return jsonify({"success": True})
 
 @app.route('/logout')
 def logout():
@@ -57,7 +41,7 @@ def logout():
 @app.route('/generate', methods=['POST'])
 def generate():
     if 'user_key' not in session:
-        return jsonify({"error": "Please login first"}), 401
+        return jsonify({"error": "Please enter your API key first"}), 401
     if 'image' not in request.files:
         return jsonify({"error": "No image uploaded"}), 400
     

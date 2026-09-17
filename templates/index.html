@@ -10,7 +10,7 @@
         .app-card { background: var(--card); padding: 2.5rem; border-radius: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.7); border: 1px solid #2a2a35; width: 450px; text-align: center; }
         .logo { font-size: 2rem; font-weight: 800; background: linear-gradient(to right, #bc13fe, #00d2ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; }
         .tagline { color: #888; font-size: 0.9rem; margin-bottom: 2rem; }
-        .auth-btn { background: var(--accent); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block; transition: 0.3s; }
+        .auth-btn { background: var(--accent); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block; transition: 0.3s; cursor: pointer; border: none; width: 100%; }
         .auth-btn:hover { opacity: 0.8; transform: translateY(-2px); }
         .hidden { display: none; }
         .input-group { text-align: left; margin-bottom: 1.2rem; }
@@ -33,8 +33,12 @@
 
         {% if not logged_in %}
         <div id="login-section">
-            <p style="margin-bottom: 1.5rem;">Connect your Pollinations account to start morphing.</p>
-            <a href="/login" class="auth-btn">Connect Wallet</a>
+            <p style="margin-bottom: 1.5rem;">Enter your Pollinations API key to start morphing.</p>
+            <div class="input-group">
+                <label>API Key (sk_...)</label>
+                <input type="password" id="apiKeyInput" placeholder="sk_...">
+            </div>
+            <button id="loginBtn" class="auth-btn">Connect Wallet</button>
         </div>
         {% else %}
         <div id="main-section">
@@ -50,29 +54,10 @@
                 <div class="input-group">
                     <label>Style Preset (Edit Models)</label>
                     <select id="modelIn">
-                        <optgroup label="Anime & Manga">
-                            <option value="epic-manga" selected>Epic Manga</option>
-                            <option value="janpan-anime">Japan Anime</option>
-                            <option value="ghibli-spirited-away-anime">Studio Ghibli: Spirited Away</option>
-                            <option value="ghibli-princess-mononoke-anime">Studio Ghibli: Princess Mononoke</option>
-                            <option value="ghibli-my-neighbor-totoro-anime">Studio Ghibli: My Neighbor Totoro</option>
-                        </optgroup>
-                        <optgroup label="Stylized & 3D">
-                            <option value="3d-cartoon-1">3D Pixar Style</option>
-                            <option value="cartoon-1">Classic Cartoon</option>
-                            <option value="pixel-art">Retro Pixel Art</option>
-                            <option value="nano-banana-pro">Nano Banana Pro</option>
-                        </optgroup>
-                        <optgroup label="Fine Art">
-                            <option value="oil-painting">Classical Oil Painting</option>
-                            <option value="monet">Claude Monet Style</option>
-                            <option value="parchment">Old Parchment</option>
-                        </optgroup>
-                        <optgroup label="Advanced">
-                            <option value="gpt-image">GPT Image Morph</option>
-                            <option value="grok-imagine">Grok Imagine Morph</option>
-                            <option value="seedream-4.5">SeeDream 4.5</option>
-                        </optgroup>
+                        <option value="epic-manga">Epic Manga</option>
+                        <option value="3d-cartoon-1">3D Pixar Style</option>
+                        <option value="pixel-art">Retro Pixel Art</option>
+                        <option value="oil-painting">Classical Oil</option>
                     </select>
                 </div>
                 <button type="submit" class="gen-btn" id="genBtn">Morph Identity</button>
@@ -91,6 +76,45 @@
     </div>
 
     <script>
+        const loginBtn = document.getElementById('loginBtn');
+        if(loginBtn) {
+            loginBtn.onsubmit = async (e) => {
+                e.preventDefault();
+                const key = document.getElementById('apiKeyInput').value;
+                
+                const formData = new FormData();
+                formData.append('api_key', key);
+
+                try {
+                    const res = await fetch('/set_key', { 
+                        method: 'POST', 
+                        body: formData 
+                    });
+                    if (res.ok) {
+                        window.location.reload();
+                    } else {
+                        const err = await res.json();
+                        alert("Error: " + (err.error || "Invalid API Key"));
+                    }
+                } catch (e) { alert("Connection error: " + e); }
+            };
+        }
+        // Redefining the logic slightly for the login button because it's not in a form
+        if(loginBtn) {
+            loginBtn.onclick = async () => {
+                const key = document.getElementById('apiKeyInput').value;
+                const formData = new FormData();
+                formData.append('api_key', key);
+                try {
+                    const res = await fetch('/set_key', { method: 'POST', body: formData });
+                    if (res.ok) { window.location.reload(); } else {
+                        const err = await res.json();
+                        alert("Error: " + (err.error || "Invalid API Key"));
+                    }
+                } catch (e) { alert("Connection error: " + e); }
+            }
+        }
+
         const form = document.getElementById('morphForm');
         if(form) {
             form.onsubmit = async (e) => {
