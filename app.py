@@ -14,14 +14,14 @@ API_URL = "https://gen.pollinations.ai/v1/images/edits"
 
 @app.route('/')
 def index():
-    # Fixed: session is now imported
     return render_template('index.html', logged_in= 'user_key' in session)
 
 @app.route('/login')
 def login():
-    # Step 1: Redirect user to Pollinations OAuth page
-    # Use request.host_url to dynamically get the Railway domain
-    redirect_uri = request.host_url + "callback"
+    # Ensure we use HTTPS for the redirect URI
+    host = request.host_url.replace("http://", "https://")
+    redirect_uri = host + "callback"
+    
     auth_url = f"https://gen.pollinations.ai/oauth/authorize?client_id=pk_I7Juq9TCkV9jG1wL&redirect_uri={redirect_uri}&response_type=code&scope=usage"
     return redirect(auth_url)
 
@@ -31,11 +31,15 @@ def callback():
     if not code:
         return "Authorization failed", 400
 
+    # Ensure we use HTTPS for the redirect URI here too
+    host = request.host_url.replace("http://", "https://")
+    redirect_uri = host + "callback"
+
     token_res = requests.post("https://gen.pollinations.ai/oauth/token", data={
         "client_id": "pk_I7Juq9TCkV9jG1wL",
         "grant_type": "authorization_code",
         "code": code,
-        "redirect_uri": request.host_url + "callback"
+        "redirect_uri": redirect_uri
     })
 
     if token_res.status_code == 200:
