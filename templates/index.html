@@ -24,6 +24,10 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         .footer { margin-top: 2rem; font-size: 0.7rem; color: #555; }
         .footer a { color: #888; text-decoration: none; }
+        .connect-btn { background: var(--accent); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block; transition: 0.3s; cursor: pointer; border: none; width: 100%; text-align: center; font-size: 1rem; }
+        .connect-btn:hover { opacity: 0.8; transform: translateY(-2px); }
+        .disconnect-btn { background: #ff4d4d; color: white; padding: 8px 16px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; transition: 0.3s; cursor: pointer; border: none; font-size: 0.8rem; }
+        .disconnect-btn:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
@@ -33,11 +37,20 @@
 
         {% if not logged_in %}
         <div id="login-section">
-            <p style="margin-bottom: 1.5rem;">Connect your Pollinations wallet to start morphing.</p>
-            <button id="loginBtn" class="auth-btn">Connect Wallet</button>
+            <p style="margin-bottom: 1.5rem; color: #888;">Connect your Pollinations wallet to start morphing. You'll pay with your own Pollen balance.</p>
+            <a href="/connect" class="connect-btn">Connect Wallet</a>
+            <p style="margin-top: 1rem; font-size: 0.75rem; color: #666;">
+                By connecting, you authorize PersonaMorph to use your Pollinations account for image generation. Your API key never leaves your session.
+            </p>
         </div>
         {% else %}
         <div id="main-section">
+            <p style="margin-bottom: 1.5rem; text-align: center;">
+                <span style="color: #00ff88;">✓</span> Connected as <strong id="user-display">User</strong>
+                <span style="float: right;">
+                    <a href="/disconnect" class="disconnect-btn">Disconnect</a>
+                </span>
+            </p>
             <form id="morphForm">
                 <div class="input-group">
                     <label>Upload Your Photo</label>
@@ -48,7 +61,7 @@
                     <input type="text" id="promptIn" value="Cyberpunk cyborg, neon circuitry, ultra-realistic">
                 </div>
                 <div class="input-group">
-                    <label>Style Preset</label>
+                    <label>Style Preset (Edit Models)</label>
                     <select id="modelIn">
                         <option value="community/sharktide/inferenceport-ai-lightning-image-turbo">High Quality Turbo</option>
                     </select>
@@ -58,7 +71,7 @@
             <div class="loader" id="loader"></div>
             <div id="result-area">
                 <img id="res-img" src="">
-                <p style="font-size: 0.8rem; margin-top: 10px;"><a href="/disconnect" style="color: #ff4d4d; text-decoration: none;">Disconnect Wallet</a></p>
+                <p style="font-size: 0.8rem; margin-top: 10px; text-align: center;">Your image has been generated using Pollinations AI</p>
             </div>
         </div>
         {% endif %}
@@ -69,13 +82,7 @@
     </div>
 
     <script>
-        const loginBtn = document.getElementById('loginBtn');
-        if(loginBtn) {
-            loginBtn.onclick = () => {
-                window.location.href = '/connect';
-            };
-        }
-
+        // Form submission handling
         const form = document.getElementById('morphForm');
         if(form) {
             form.onsubmit = async (e) => {
@@ -106,7 +113,11 @@
                         alert("Error: " + (err.error || "Something went wrong"));
                     }
                 } catch (e) { alert("Connection error: " + e); }
-                finally { btn.disabled = false; btn.innerText = "Morph Identity"; loader.style.display = "none"; }
+                finally { 
+                    btn.disabled = false; 
+                    btn.innerText = "Morph Identity"; 
+                    loader.style.display = "none"; 
+                }
             };
         }
     </script>

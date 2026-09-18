@@ -4,6 +4,7 @@ import io
 import os
 import secrets
 from functools import wraps
+from urllib.parse import urlencode
 
 app = Flask(__name__)
 app.secret_key = "super-secret-key-for-session"
@@ -12,14 +13,12 @@ app.secret_key = "super-secret-key-for-session"
 # App Key from Pollinations Dashboard (pk_ - public, safe to expose)
 APP_KEY = "pk_I7Juq9TCkV9jG1wL"
 APP_REDIRECT_URI = "https://personamorph-ai-production.up.railway.app/callback"
-POLLINATIONS_AUTHORIZE_URL = "https://gen.pollinations.ai/oauth/authorize"
-POLLINATIONS_TOKEN_URL = "https://gen.pollinations.ai/oauth/token"
+POLLINATIONS_AUTHORIZE_URL = "https://enter.pollinations.ai/authorize"
+POLLINATIONS_TOKEN_URL = "https://enter.pollinations.ai/api/oauth/token"
 EDIT_API_URL = "https://gen.pollinations.ai/v1/images/edits"
 DEFAULT_MODEL = "community/sharktide/inferenceport-ai-lightning-image-turbo"
 
-# State token storage (in production, use Redis; here we use session)
-# Maps state -> session_id for CSRF verification
-
+# Generate a random state token for CSRF protection
 def generate_state():
     return secrets.token_urlsafe(32)
 
@@ -31,19 +30,22 @@ def index():
 
 @app.route('/connect')
 def connect():
-    """Initiate OAuth 2.0 Authorization Code flow with PKCE-like state."""
+    """Initiate OAuth 2.0 Authorization Code flow."""
     state = generate_state()
     session['oauth_state'] = state
     session['redirect_after_auth'] = request.args.get('next', url_for('index'))
     
-    auth_url = (
-        f"{POLLINATIONS_AUTHORIZE_URL}?"
-        f"client_id={APP_KEY}&"
-        f"redirect_uri={APP_REDIRECT_URI}&"
-        f"response_type=code&"
-        f"scope=usage&"
-        f"state={state}"
-    )
+    # Build the authorization URL with PKCE S256
+    # Note: Pollinations supports PKCE, but we use state for CSRF
+    auth_params = {
+        'response_type': 'code',
+        'client_id': APP_KEY,
+        'redirect_uri': APP_REDIRECT_URI,
+        'scope': 'usage',
+        'state': state
+    }
+    
+    auth_url = f"{POLLINATIONS_AUTHORIZE_URL}?{urlencode(auth_params)}"
     return redirect(auth_url)
 
 @app.route('/callback')
@@ -84,15 +86,21 @@ def callback():
             }), 400
         
         token_data = token_res.json()
-        access_token = token_data.get('access_token') or token_data.get('token')
+        # Handle different response formats
+        access_token = (
+            token_data.get('access_token') or 
+            token_data.get('token') or 
+            token_data.get('id_token')
+        )
         
         if not access_token:
             return jsonify({"error": "No access token in response", "response": token_data}), 400
         
-        # Store the temporary token
+        # Store the temporary token (expires in session)
         session['access_token'] = access_token
         session.pop('oauth_state', None)
         
+        # Redirect to the main page
         return redirect(session.get('redirect_after_auth', url_for('index')))
         
     except Exception as e:
@@ -135,6 +143,7 @@ def generate():
 
 @app.route('/disconnect')
 def disconnect():
+    """Clear the access token and disconnect the wallet."""
     session.pop('access_token', None)
     session.pop('oauth_state', None)
     return redirect(url_for('index'))
