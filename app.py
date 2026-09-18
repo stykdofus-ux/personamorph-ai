@@ -3,6 +3,8 @@ import requests
 import io
 import os
 import secrets
+import hashlib
+import base64
 from functools import wraps
 from urllib.parse import urlencode
 
@@ -18,9 +20,14 @@ POLLINATIONS_TOKEN_URL = "https://enter.pollinations.ai/api/oauth/token"
 EDIT_API_URL = "https://gen.pollinations.ai/v1/images/edits"
 DEFAULT_MODEL = "community/sharktide/inferenceport-ai-lightning-image-turbo"
 
-# Generate a random state token for CSRF protection
-def generate_state():
+def generate_code_verifier():
+    """Generate a PKCE code verifier (43-128 characters, base64url-encoded random bytes)."""
     return secrets.token_urlsafe(32)
+
+def generate_code_challenge(verifier):
+    """Generate S256 code challenge from verifier."""
+    sha256_hash = hashlib.sha256(verifier.encode('ascii')).digest()
+    return base64.urlsafe_b64encode(sha256_hash).rstrip(b'=').decode('ascii')
 
 @app.route('/')
 def index():
@@ -30,19 +37,26 @@ def index():
 
 @app.route('/connect')
 def connect():
-    """Initiate OAuth 2.0 Authorization Code flow."""
-    state = generate_state()
+    """Initiate OAuth 2.0 Authorization Code flow with PKCE."""
+    # Generate PKCE code_verifier and challenge
+    code_verifier = generate_code_verifier()
+    code_challenge = generate_code_challenge(code_verifier)
+    state = secrets.token_urlsafe(32)
+    
+    # Store in session for callback verification
+    session['code_verifier'] = code_verifier
     session['oauth_state'] = state
     session['redirect_after_auth'] = request.args.get('next', url_for('index'))
     
     # Build the authorization URL with PKCE S256
-    # Note: Pollinations supports PKCE, but we use state for CSRF
     auth_params = {
         'response_type': 'code',
         'client_id': APP_KEY,
         'redirect_uri': APP_REDIRECT_URI,
         'scope': 'usage',
-        'state': state
+        'state': state,
+        'code_challenge': code_challenge,
+        'code_challenge_method': 'S256'
     }
     
     auth_url = f"{POLLINATIONS_AUTHORIZE_URL}?{urlencode(auth_params)}"
@@ -65,7 +79,12 @@ def callback():
     if not code:
         return jsonify({"error": "No authorization code received"}), 400
     
-    # Exchange code for access token
+    # Get the code_verifier from session
+    code_verifier = session.get('code_verifier')
+    if not code_verifier:
+        return jsonify({"error": "PKCE code_verifier missing"}), 400
+    
+    # Exchange code for access token with PKCE
     try:
         token_res = requests.post(
             POLLINATIONS_TOKEN_URL,
@@ -74,6 +93,7 @@ def callback():
                 'code': code,
                 'redirect_uri': APP_REDIRECT_URI,
                 'client_id': APP_KEY,
+                'code_verifier': code_verifier,
             },
             headers={'Accept': 'application/json'},
             timeout=30
@@ -98,6 +118,7 @@ def callback():
         
         # Store the temporary token (expires in session)
         session['access_token'] = access_token
+        session.pop('code_verifier', None)
         session.pop('oauth_state', None)
         
         # Redirect to the main page
@@ -145,6 +166,7 @@ def generate():
 def disconnect():
     """Clear the access token and disconnect the wallet."""
     session.pop('access_token', None)
+    session.pop('code_verifier', None)
     session.pop('oauth_state', None)
     return redirect(url_for('index'))
 
